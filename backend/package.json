@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@versatus/versatus-javascript": "^0.1.172",
     "acorn": "^8.12.0",
     "acorn-import-attributes": "^1.9.5",
     "acorn-walk": "^8.3.3",
@@ -218,7 +219,6 @@
     "yn": "^3.1.1",
     "yocto-queue": "^1.0.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
