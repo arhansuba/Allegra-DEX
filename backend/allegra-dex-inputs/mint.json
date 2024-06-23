@@ -1,0 +1,8 @@
+{
+    "action": "mint",
+    "params": {
+      "to": "0xYourAccountAddress",
+      "amount": 1000
+    }
+  }
+  

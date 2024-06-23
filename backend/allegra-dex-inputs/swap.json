@@ -1,0 +1,10 @@
+{
+    "action": "swap",
+    "params": {
+      "amount0Out": 10,
+      "amount1Out": 20,
+      "to": "0xYourAccountAddress",
+      "data": ""
+    }
+  }
+  
