@@ -1,5 +1,8 @@
 // A library for performing various math operations
-
+export const Math = {
+    // Define your math functions or constants here
+  };
+  
 const MathLibrary = {
     min: function(x, y) {
         return x < y ? x : y;

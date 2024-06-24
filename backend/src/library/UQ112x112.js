@@ -1,7 +1,10 @@
 // A library for handling binary fixed point numbers (UQ112x112) in JavaScript
 // range: [0, 2^112 - 1]
 // resolution: 1 / 2^112
-
+export const UQ112x112 = {
+    // Define your functions or constants here
+  };
+  
 const BigNumber = require('bignumber.js');
 
 const UQ112x112Library = {

@@ -1,7 +1,5 @@
 import {
-    buildBurnInstruction,
     buildCreateInstruction,
-    buildMintInstructions,
     buildProgramUpdateField,
     buildTokenDistribution,
     buildTokenUpdateField,
@@ -17,11 +15,8 @@ import {
   import { TokenOrProgramUpdate } from '@versatus/versatus-javascript/lib/programs/Token'
   import { Outputs } from '@versatus/versatus-javascript/lib/programs/Outputs'
   import {
-    checkIfValuesAreUndefined,
     formatAmountToHex,
     formatVerse,
-    onlyOwner,
-    parseAmountToBigInt,
     parseTxInputs,
     validate,
     validateAndCreateJsonString,

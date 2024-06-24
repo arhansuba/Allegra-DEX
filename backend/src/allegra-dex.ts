@@ -1,9 +1,12 @@
-import { ethers } from 'ethers';
-import { ERC20 } from './backend/src/AllegraERC20'; // Adjusted relative path
-import { Math } from './backend/src/library/Math'; // Adjusted relative path
-import { UQ112x112 } from './backend/src/library/UQ112x112'; // Adjusted relative path
+import { AllegraERC20 } from './src/AllegraERC20';
+import { Math } from './src/library/Math';
+import { UQ112x112 } from './src/library/UQ112x112';
+import { ethers} from 'ethers';
+import { AddressZero } from '@ethersproject/constants';
 
-class AllegraDEX extends ERC20 {
+
+
+class AllegraDEX extends AllegraERC20 {
   MINIMUM_LIQUIDITY: bigint = BigInt(10 ** 3);
   SELECTOR: string = ethers.utils.id('transfer(address,uint256)').slice(0, 10);
 
@@ -20,8 +23,8 @@ class AllegraDEX extends ERC20 {
   kLast: bigint = BigInt(0);
 
   unlocked: number = 1;
-  totalSupply: bigint = BigInt(0); // Initialize totalSupply
-  balanceOf: any = {}; // Initialize balanceOf
+  totalSupply: bigint = BigInt(0);
+  balanceOf: { [address: string]: bigint } = {};
 
   constructor(factoryAddress: string) {
     super();
@@ -67,7 +70,7 @@ class AllegraDEX extends ERC20 {
 
   private _mintFee(_reserve0: bigint, _reserve1: bigint) {
     const feeTo = this.factory; // Simulate feeTo address from factory
-    const feeOn = feeTo !== ethers.constants.AddressZero;
+    const feeOn = feeTo !== AddressZero;
     const _kLast = this.kLast;
 
     if (feeOn) {
@@ -87,9 +90,16 @@ class AllegraDEX extends ERC20 {
   }
 
   private _mint(feeTo: string, liquidity: bigint) {
-    // Implement mint logic here
-    // Example: this.totalSupply += liquidity;
-    //          this.balanceOf[feeTo] += liquidity;
+    if (this.totalSupply === BigInt(0)) {
+      this.totalSupply = liquidity;
+    } else {
+      this.totalSupply += liquidity;
+    }
+    if (!this.balanceOf[feeTo]) {
+      this.balanceOf[feeTo] = liquidity;
+    } else {
+      this.balanceOf[feeTo] += liquidity;
+    }
   }
 
   mint(to: string) {
@@ -105,26 +115,29 @@ class AllegraDEX extends ERC20 {
 
     let liquidity: bigint;
     if (_totalSupply === BigInt(0)) {
-      liquidity = Math.sqrt(Number(amount0 * amount1)) - this.MINIMUM_LIQUIDITY;
-      this._mint(ethers.constants.AddressZero, this.MINIMUM_LIQUIDITY);
+      liquidity = BigInt(Math.sqrt(Number(amount0.mul(amount1).toString()))) - this.MINIMUM_LIQUIDITY;
+      this._mint(AddressZero, this.MINIMUM_LIQUIDITY);
     } else {
-      liquidity = Math.min(Number(amount0 * _totalSupply) / Number(_reserve0), Number(amount1 * _totalSupply) / Number(_reserve1));
+      liquidity = BigInt(Math.min(
+        Number((amount0.toBigInt() * _totalSupply) / _reserve0),
+        Number((amount1.toBigInt() * _totalSupply) / _reserve1)
+      ));
     }
 
     if (liquidity <= 0) throw new Error('AllegraDEX: INSUFFICIENT_LIQUIDITY_MINTED');
     this._mint(to, liquidity);
 
     this._update(balance0.toBigInt(), balance1.toBigInt(), _reserve0, _reserve1);
-    // if (feeOn) this.kLast = this.reserve0 * this.reserve1;
 
-    // Emit Mint event
-    console.log('Mint', { sender: to, amount0, amount1 });
+    console.log('Mint', { sender: to, amount0: amount0.toString(), amount1: amount1.toString() });
   }
 
-  private _burn(to: string, liquidity: any) {
-    // Implement burn logic here
-    // Example: this.totalSupply -= liquidity;
-    //          this.balanceOf[to] -= liquidity;
+  private _burn(to: string, liquidity: bigint) {
+    if (!this.balanceOf[to] || this.balanceOf[to] < liquidity) {
+      throw new Error('AllegraDEX: INSUFFICIENT_BALANCE');
+    }
+    this.totalSupply -= liquidity;
+    this.balanceOf[to] -= liquidity;
   }
 
   burn(to: string) {
@@ -142,16 +155,14 @@ class AllegraDEX extends ERC20 {
 
     if (amount0 <= 0 || amount1 <= 0) throw new Error('AllegraDEX: INSUFFICIENT_LIQUIDITY_BURNED');
     this._burn(to, liquidity);
-    this._safeTransfer(this.token0, to, amount0);
-    this._safeTransfer(this.token1, to, amount1);
+    this._safeTransfer(this.token0!, to, amount0);
+    this._safeTransfer(this.token1!, to, amount1);
 
     const newBalance0 = ethers.BigNumber.from('1000'); // Simulate balance
     const newBalance1 = ethers.BigNumber.from('1000'); // Simulate balance
 
     this._update(newBalance0.toBigInt(), newBalance1.toBigInt(), _reserve0, _reserve1);
-    // if (feeOn) this.kLast = this.reserve0 * this.reserve1;
 
-    // Emit Burn event
     console.log('Burn', { sender: to, amount0, amount1 });
   }
 
@@ -165,8 +176,8 @@ class AllegraDEX extends ERC20 {
     let balance0 = ethers.BigNumber.from('1000'); // Simulate balance
     let balance1 = ethers.BigNumber.from('1000'); // Simulate balance
 
-    if (amount0Out > 0) this._safeTransfer(this.token0, to, amount0Out);
-    if (amount1Out > 0) this._safeTransfer(this.token1, to, amount1Out);
+    if (amount0Out > 0) this._safeTransfer(this.token0!, to, amount0Out);
+    if (amount1Out > 0) this._safeTransfer(this.token1!, to, amount1Out);
     if (data.length > 0) {
       // Call on the callee
     }
@@ -183,14 +194,13 @@ class AllegraDEX extends ERC20 {
 
     this._update(balance0.toBigInt(), balance1.toBigInt(), _reserve0, _reserve1);
 
-    // Emit Swap event
-    console.log('Swap', { sender: to, amount0In, amount1In, amount0Out, amount1Out });
+    console.log('Swap', { sender: to, amount0In: amount0In.toString(), amount1In: amount1In.toString(), amount0Out: amount0Out.toString(), amount1Out: amount1Out.toString() });
   }
 
   skim(to: string) {
     this.lock();
-    this._safeTransfer(this.token0, to, ethers.BigNumber.from('1000').toBigInt() - this.reserve0);
-    this._safeTransfer(this.token1, to, ethers.BigNumber.from('1000').toBigInt() - this.reserve1);
+    this._safeTransfer(this.token0!, to, ethers.BigNumber.from('1000').toBigInt() - this.reserve0);
+    this._safeTransfer(this.token1!, to, ethers.BigNumber.from('1000').toBigInt() - this.reserve1);
   }
 
   sync() {
